@@ -172,12 +172,13 @@ namespace Appmenu
         
         if( button_pressed ){
             dragging_outside = true;
+        
+            Wnck.Window win = this.get_active_window();
+            if( win.is_maximized() ){
+                win.unmaximize();
+            }
         }
-
-        Wnck.Window win = this.get_active_window();
-        if( win.is_maximized() ){
-           win.unmaximize();
-        }
+        
         return true;
      }
 
