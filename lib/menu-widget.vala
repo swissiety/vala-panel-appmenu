@@ -177,14 +177,28 @@ namespace Appmenu
             if( win.is_maximized() ){
                 win.unmaximize();
             }
+
+            // attempt to get recalculated dimensions
+            win = this.get_active_window();
+
+            int xp;
+            int yp;
+            int widthp;
+            int heightp;
+
+            win.get_geometry ( out xp, out yp, out widthp, out heightp);
+
+            this.xdiff = ((int) event.x -xp);
+            this.ydiff = ((int) event.y -yp )+5;
+            
         }
         
         return true;
      }
 
     bool dragging_outside = false;
-    int startx = 0;
-    int starty = 0;
+    int xdiff = 0;
+    int ydiff = 0;
 
     protected Wnck.Window get_active_window(){ 
         
@@ -207,7 +221,7 @@ namespace Appmenu
       //  win.get_geometry ( out xp, out yp, out widthp, out heightp);
         
         win.set_geometry ( WindowGravity.CURRENT , WindowMoveResizeMask.X|WindowMoveResizeMask.Y,
-                            x - startx, y-20, widthp, heightp );
+                            x - xdiff, y-ydiff, widthp, heightp );
         
         return true;
     }
@@ -222,8 +236,12 @@ protected bool on_button_release( Gtk.Widget w, Gdk.EventButton event){
 
 protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
 {
+    if( event.button != 1 ){
+        return false;
+    }
+
     Wnck.Window win = this.get_active_window();
-        
+    
     if( event.type == DOUBLE_BUTTON_PRESS ){
                 
         if (win == null){
@@ -241,19 +259,7 @@ protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
     }
 
     if( event.type == BUTTON_PRESS ){
-
-        int xp;
-        int yp;
-        int widthp;
-        int heightp;
-
-        win.get_geometry ( out xp, out yp, out widthp, out heightp);
-
-        this.startx = xp;
-        this.starty = yp;
-
-        this.button_pressed = true;
-        
+        this.button_pressed = true;        
     }
 
 
