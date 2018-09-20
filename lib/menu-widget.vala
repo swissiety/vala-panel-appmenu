@@ -16,7 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Gtk;
+using Gdk;
+
 using GLib;
+using Wnck;
 
 namespace Key
 {
@@ -39,6 +43,10 @@ namespace Appmenu
         private Gtk.MenuBar mwidget = new Gtk.MenuBar();
         private ulong backend_connector = 0;
         private ulong compact_connector = 0;
+
+        bool button_pressed = false;
+
+
         construct
         {
             provider = new Gtk.CssProvider();
@@ -53,6 +61,7 @@ namespace Appmenu
                     return Source.REMOVE;
                 });
             });
+
             mcontext.add_class("-vala-panel-appmenu-private");
             Gtk.StyleContext.add_provider_for_screen(this.get_screen(), provider,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
             //Setup menubar
@@ -62,16 +71,33 @@ namespace Appmenu
             scroller.set_policy(Gtk.PolicyType.EXTERNAL, Gtk.PolicyType.NEVER);
             scroller.set_shadow_type(Gtk.ShadowType.NONE);
             scroller.scroll_event.connect(on_scroll_event);
+
+            mwidget.button_press_event.connect(on_button_press);
+            mwidget.button_release_event.connect(on_button_release);
+            mwidget.motion_notify_event.connect(motion_notify);
+            mwidget.enter_notify_event.connect(enter_notify);
+            mwidget.leave_notify_event.connect(leave_notify);
+
             scroller.set_min_content_width(16);
             scroller.set_min_content_height(16);
             scroller.set_propagate_natural_height(true);
             scroller.set_propagate_natural_width(true);
             this.add(scroller);
+
             scroller.add(mwidget);
             mwidget.show();
             scroller.show();
             this.show();
         }
+
+    private bool motion_notify (EventMotion event)
+    {
+        if( this.dragging_outside ){
+            on_drag( (int) event.x, (int) event.y );
+        }
+        return false;
+    }
+
         public MenuWidget()
         {
             Object();
@@ -128,6 +154,112 @@ namespace Appmenu
             this.menubar = menubar_model;
             this.restock();
         }
+
+     bool enter_notify (EventCrossing event){
+         
+        if( dragging_outside){
+            
+            Wnck.Window win = this.get_active_window();        
+            if(!win.is_maximized() ){
+                win.maximize();
+            }
+        }
+        return true;
+     }
+
+
+     bool leave_notify (EventCrossing event){
+        
+        if( button_pressed ){
+            dragging_outside = true;
+        }
+
+        Wnck.Window win = this.get_active_window();
+        if( win.is_maximized() ){
+           win.unmaximize();
+        }
+        return true;
+     }
+
+    bool dragging_outside = false;
+    int startx = 0;
+    int starty = 0;
+
+    protected Wnck.Window get_active_window(){ 
+        
+        Wnck.Screen screen = Wnck.Screen.get_default ();
+        screen.get_active_window();
+        screen.force_update ();
+
+        return screen.get_active_window();
+    }
+
+    protected bool on_drag(int x, int y){
+
+        Wnck.Window win = this.get_active_window();
+        
+        int xp = 0;
+        int yp = 0;
+        int widthp = 0;
+        int heightp = 0;
+
+      //  win.get_geometry ( out xp, out yp, out widthp, out heightp);
+        
+        win.set_geometry ( WindowGravity.CURRENT , WindowMoveResizeMask.X|WindowMoveResizeMask.Y,
+                            x - startx, y-20, widthp, heightp );
+        
+        return true;
+    }
+
+
+protected bool on_button_release( Gtk.Widget w, Gdk.EventButton event){
+
+    this.button_pressed = false;
+    dragging_outside = false;
+    return true;
+}
+
+protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
+{
+    Wnck.Window win = this.get_active_window();
+        
+    if( event.type == DOUBLE_BUTTON_PRESS ){
+                
+        if (win == null){
+            stderr.printf("no active window found" );
+            return true;
+        }
+
+        if( win.is_maximized() ){
+            win.unmaximize();
+        }else{
+            win.maximize();
+        }
+
+      return true;
+    }
+
+    if( event.type == BUTTON_PRESS ){
+
+        int xp;
+        int yp;
+        int widthp;
+        int heightp;
+
+        win.get_geometry ( out xp, out yp, out widthp, out heightp);
+
+        this.startx = xp;
+        this.starty = yp;
+
+        this.button_pressed = true;
+        
+    }
+
+
+    return false;
+}
+
+
         protected bool on_scroll_event(Gtk.Widget w, Gdk.EventScroll event)
         {
             var val = scroll_adj.get_value();
