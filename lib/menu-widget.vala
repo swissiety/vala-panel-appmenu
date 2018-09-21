@@ -45,7 +45,9 @@ namespace Appmenu
         private ulong compact_connector = 0;
 
         bool button_pressed = false;
-
+        bool dragging_outside = false;
+        int xdiff = 0;
+        int ydiff = 0;
 
         construct
         {
@@ -89,14 +91,6 @@ namespace Appmenu
             scroller.show();
             this.show();
         }
-
-    private bool motion_notify (EventMotion event)
-    {
-        if( this.dragging_outside ){
-            on_drag( (int) event.x, (int) event.y );
-        }
-        return false;
-    }
 
         public MenuWidget()
         {
@@ -154,150 +148,139 @@ namespace Appmenu
             this.menubar = menubar_model;
             this.restock();
         }
-
-     bool enter_notify (EventCrossing event){
-         
-        if( is_mouse_on_menu(event.x) ){
+        private bool motion_notify (EventMotion event)
+        {
+            if( this.dragging_outside ){
+                on_drag( (int) event.x, (int) event.y );
+            }
             return false;
         }
-   
-        if( dragging_outside){
+        bool enter_notify (EventCrossing event){
             
-            Wnck.Window win = this.get_active_window();        
-            if(!win.is_maximized() ){
-                win.maximize();
+            if( is_mouse_on_menu(event.x) ){
+                return false;
             }
-        }
-        return true;
-     }
-
-
-     bool leave_notify (EventCrossing event){
-        
-        if( is_mouse_on_menu(event.x) ){
-            return false;
-        }
-   
-        if( button_pressed ){
-            stderr.printf("leave notify - button pressed:true \n");
-            dragging_outside = true;
-        
-            Wnck.Window win = this.get_active_window();
-            if( win.is_maximized() ){
-                win.unmaximize();
-            }
-
-            // attempt to get recalculated dimensions
-            win = this.get_active_window();
-
-            int xp;
-            int yp;
-            int widthp;
-            int heightp;
-
-            win.get_geometry ( out xp, out yp, out widthp, out heightp);
-
-            if( xp < event.x_root && event.x_root < xp+widthp  ){
-                this.xdiff = ((int) event.x -xp);
-                stderr.printf("dazwischen\n" );
-            }else{
-                stderr.printf("daneben - neu positionieren \n");
-                this.xdiff = ( widthp/2 );
-            }
-
-            this.ydiff = (int) event.y_root + 5;
-            
-        }
-        
-        return true;
-     }
-
-    bool dragging_outside = false;
-    int xdiff = 0;
-    int ydiff = 0;
-
-    protected Wnck.Window get_active_window(){ 
-        
-        Wnck.Screen screen = Wnck.Screen.get_default ();
-        screen.get_active_window();
-        screen.force_update ();
-
-        return screen.get_active_window();
-    }
-
-
-    protected bool is_mouse_on_menu( double x ){
-
-        Requisition alloc = mwidget.get_requisition ();
-        // stderr.printf("mouseonmenus: %i w %i \n", (int) x, alloc.width );
-        return (x < alloc.width);
-    }
-
-    protected bool on_drag(int x, int y){
-
-        Wnck.Window win = this.get_active_window();
-        
-        int xp = 0;
-        int yp = 0;
-        int widthp = 0;
-        int heightp = 0;
-        
-        win.set_geometry ( WindowGravity.CURRENT , WindowMoveResizeMask.X|WindowMoveResizeMask.Y,
-                            x - xdiff, y-ydiff, widthp, heightp );
-        
-        return true;
-    }
-
-protected bool on_button_release( Gtk.Widget w, Gdk.EventButton event){
     
-    if( is_mouse_on_menu(event.x) ){
-        // handling the menu so propagate event handling
-        return false;
-    }
-
-    stderr.printf("################# BUTTON RELEASE\n\n");
-    this.button_pressed = false;
-    this.dragging_outside = false;
-    return true;
-}
-
-protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
-{
-    if( is_mouse_on_menu(event.x) ){
-        return false;
-    }
-
-    // filter only left clicks in desired area
-    if( event.button != 1 ){
-        return true;
-    }
-
-    Wnck.Window win = this.get_active_window();
-    
-    if( event.type == DOUBLE_BUTTON_PRESS ){
+            if( dragging_outside){
                 
-        if (win == null){
-            stderr.printf("no active window found" );
+                Wnck.Window win = this.get_active_window();        
+                if(!win.is_maximized() ){
+                    win.maximize();
+                }
+            }
+            return true;
+        }
+        bool leave_notify (EventCrossing event){
+            
+            if( is_mouse_on_menu(event.x) ){
+                return false;
+            }
+    
+            if( button_pressed ){
+                
+                dragging_outside = true;
+            
+                Wnck.Window win = this.get_active_window();
+                if( win.is_maximized() ){
+                    win.unmaximize();
+                }
+
+                int xp;
+                int yp;
+                int widthp;
+                int heightp;
+
+                win.get_geometry ( out xp, out yp, out widthp, out heightp);
+                if( xp < event.x_root && event.x_root < xp+widthp  ){
+                    this.xdiff = ((int) event.x -xp);
+                }else{
+                    this.xdiff = ( widthp/2 );
+                }
+
+                this.ydiff = (int) event.y_root + 5;
+                
+            }
+            
+            return true;
+        }
+        protected Wnck.Window get_active_window(){ 
+            
+            Wnck.Screen screen = Wnck.Screen.get_default ();
+            screen.get_active_window();
+            screen.force_update ();
+
+            return screen.get_active_window();
+        }
+        protected bool is_mouse_on_menu( double x ){
+
+            int w,n;
+            mwidget.get_preferred_width(out w, out n);
+            return (x < w);
+        }
+        protected bool on_drag(int x, int y){
+
+            Wnck.Window win = this.get_active_window();
+            
+            int xp = 0;
+            int yp = 0;
+            int widthp = 0;
+            int heightp = 0;
+            
+            win.set_geometry ( WindowGravity.CURRENT , WindowMoveResizeMask.X|WindowMoveResizeMask.Y,
+                                x - xdiff, y-ydiff, widthp, heightp );
+            
+            return true;
+        }
+        protected bool on_button_release( Gtk.Widget w, Gdk.EventButton event){
+            
+            this.button_pressed = false;
+            this.dragging_outside = false;
+
+            if( is_mouse_on_menu(event.x) ){
+                // propagate event handling to menuitems
+                return false;
+            }
+
             return true;
         }
 
-        if( win.is_maximized() ){
-            win.unmaximize();
-        }else{
-            win.maximize();
+        protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
+        {
+            if( is_mouse_on_menu(event.x) ){
+                // propagate event handling to menuitems
+                return false;
+            }
+
+            // filter only left clicks in desired area
+            if( event.button != 1 ){
+                return true;
+            }
+
+            Wnck.Window win = this.get_active_window();
+            
+            if( event.type == DOUBLE_BUTTON_PRESS ){
+                        
+                if (win == null){
+                    stderr.printf("no active window found" );
+                    return true;
+                }
+
+                if( win.is_maximized() ){
+                    win.unmaximize();
+                }else{
+                    win.maximize();
+                }
+
+                return true;
+            }
+
+            if( event.type == BUTTON_PRESS ){
+                this.button_pressed = true;
+                return true;
+            }
+
+            return false;
         }
-
-      return true;
-    }
-
-    if( event.type == BUTTON_PRESS ){
-        this.button_pressed = true;
-        return false;
-    }
-
-    return false;
-}
-
 
         protected bool on_scroll_event(Gtk.Widget w, Gdk.EventScroll event)
         {
