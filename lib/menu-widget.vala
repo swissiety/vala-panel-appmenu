@@ -16,11 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using Gtk;
-using Gdk;
-
 using GLib;
-using Wnck;
 
 namespace Key
 {
@@ -148,14 +144,14 @@ namespace Appmenu
             this.menubar = menubar_model;
             this.restock();
         }
-        private bool motion_notify (EventMotion event)
+        private bool motion_notify (Gdk.EventMotion event)
         {
             if( this.dragging_outside ){
                 return on_drag( (int) event.x, (int) event.y );
             }
             return false;
         }
-        bool enter_notify (EventCrossing event){
+        bool enter_notify (Gdk.EventCrossing event){
             
             if( dragging_outside){
                 
@@ -166,7 +162,7 @@ namespace Appmenu
             }
             return false;
         }
-        bool leave_notify (EventCrossing event){
+        bool leave_notify (Gdk.EventCrossing event){
             
             if( button_pressed ){
                 
@@ -184,9 +180,9 @@ namespace Appmenu
 
                 win.get_geometry ( out xp, out yp, out widthp, out heightp);
                 if( xp < event.x_root && event.x_root < xp+widthp  ){
-                    this.x_diff = ((int) event.x -xp);
+                    this.x_diff = ((int) event.x - xp);
                 }else{
-                    this.x_diff = ( widthp/2 );
+                    this.x_diff = widthp / 2 ;
                 }
 
                 this.y_diff = (int) event.y_root + 5;
@@ -213,13 +209,11 @@ namespace Appmenu
 
             Wnck.Window win = this.get_active_window();
             
-            int xp = 0;
-            int yp = 0;
             int widthp = 0;
             int heightp = 0;
             
-            win.set_geometry ( WindowGravity.CURRENT , WindowMoveResizeMask.X|WindowMoveResizeMask.Y,
-                                x - x_diff, y-y_diff, widthp, heightp );
+            win.set_geometry ( Wnck.WindowGravity.CURRENT , Wnck.WindowMoveResizeMask.X|Wnck.WindowMoveResizeMask.Y,
+                                x - x_diff, y - y_diff, widthp, heightp );
             
             return true;
         }
