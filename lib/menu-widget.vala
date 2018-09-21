@@ -157,6 +157,10 @@ namespace Appmenu
 
      bool enter_notify (EventCrossing event){
          
+        if( is_mouse_on_menu(event.x) ){
+            return false;
+        }
+   
         if( dragging_outside){
             
             Wnck.Window win = this.get_active_window();        
@@ -170,7 +174,12 @@ namespace Appmenu
 
      bool leave_notify (EventCrossing event){
         
+        if( is_mouse_on_menu(event.x) ){
+            return false;
+        }
+   
         if( button_pressed ){
+            stderr.printf("leave notify - button pressed:true \n");
             dragging_outside = true;
         
             Wnck.Window win = this.get_active_window();
@@ -188,8 +197,15 @@ namespace Appmenu
 
             win.get_geometry ( out xp, out yp, out widthp, out heightp);
 
-            this.xdiff = ((int) event.x -xp);
-            this.ydiff = ((int) event.y -yp )+5;
+            if( xp < event.x_root && event.x_root < xp+widthp  ){
+                this.xdiff = ((int) event.x -xp);
+                stderr.printf("dazwischen\n" );
+            }else{
+                stderr.printf("daneben - neu positionieren \n");
+                this.xdiff = ( widthp/2 );
+            }
+
+            this.ydiff = (int) event.y_root + 5;
             
         }
         
@@ -209,6 +225,14 @@ namespace Appmenu
         return screen.get_active_window();
     }
 
+
+    protected bool is_mouse_on_menu( double x ){
+
+        Requisition alloc = mwidget.get_requisition ();
+        // stderr.printf("mouseonmenus: %i w %i \n", (int) x, alloc.width );
+        return (x < alloc.width);
+    }
+
     protected bool on_drag(int x, int y){
 
         Wnck.Window win = this.get_active_window();
@@ -217,8 +241,6 @@ namespace Appmenu
         int yp = 0;
         int widthp = 0;
         int heightp = 0;
-
-      //  win.get_geometry ( out xp, out yp, out widthp, out heightp);
         
         win.set_geometry ( WindowGravity.CURRENT , WindowMoveResizeMask.X|WindowMoveResizeMask.Y,
                             x - xdiff, y-ydiff, widthp, heightp );
@@ -226,18 +248,28 @@ namespace Appmenu
         return true;
     }
 
-
 protected bool on_button_release( Gtk.Widget w, Gdk.EventButton event){
+    
+    if( is_mouse_on_menu(event.x) ){
+        // handling the menu so propagate event handling
+        return false;
+    }
 
+    stderr.printf("################# BUTTON RELEASE\n\n");
     this.button_pressed = false;
-    dragging_outside = false;
+    this.dragging_outside = false;
     return true;
 }
 
 protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
 {
-    if( event.button != 1 ){
+    if( is_mouse_on_menu(event.x) ){
         return false;
+    }
+
+    // filter only left clicks in desired area
+    if( event.button != 1 ){
+        return true;
     }
 
     Wnck.Window win = this.get_active_window();
@@ -259,9 +291,9 @@ protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
     }
 
     if( event.type == BUTTON_PRESS ){
-        this.button_pressed = true;        
+        this.button_pressed = true;
+        return false;
     }
-
 
     return false;
 }
