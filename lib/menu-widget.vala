@@ -46,8 +46,8 @@ namespace Appmenu
 
         bool button_pressed = false;
         bool dragging_outside = false;
-        int xdiff = 0;
-        int ydiff = 0;
+        int x_diff = 0;
+        int y_diff = 0;
 
         construct
         {
@@ -151,16 +151,12 @@ namespace Appmenu
         private bool motion_notify (EventMotion event)
         {
             if( this.dragging_outside ){
-                on_drag( (int) event.x, (int) event.y );
+                return on_drag( (int) event.x, (int) event.y );
             }
             return false;
         }
         bool enter_notify (EventCrossing event){
             
-            if( is_mouse_on_menu(event.x) ){
-                return false;
-            }
-    
             if( dragging_outside){
                 
                 Wnck.Window win = this.get_active_window();        
@@ -168,14 +164,10 @@ namespace Appmenu
                     win.maximize();
                 }
             }
-            return true;
+            return false;
         }
         bool leave_notify (EventCrossing event){
             
-            if( is_mouse_on_menu(event.x) ){
-                return false;
-            }
-    
             if( button_pressed ){
                 
                 dragging_outside = true;
@@ -192,16 +184,16 @@ namespace Appmenu
 
                 win.get_geometry ( out xp, out yp, out widthp, out heightp);
                 if( xp < event.x_root && event.x_root < xp+widthp  ){
-                    this.xdiff = ((int) event.x -xp);
+                    this.x_diff = ((int) event.x -xp);
                 }else{
-                    this.xdiff = ( widthp/2 );
+                    this.x_diff = ( widthp/2 );
                 }
 
-                this.ydiff = (int) event.y_root + 5;
+                this.y_diff = (int) event.y_root + 5;
                 
             }
             
-            return true;
+            return false;
         }
         protected Wnck.Window get_active_window(){ 
             
@@ -227,7 +219,7 @@ namespace Appmenu
             int heightp = 0;
             
             win.set_geometry ( WindowGravity.CURRENT , WindowMoveResizeMask.X|WindowMoveResizeMask.Y,
-                                x - xdiff, y-ydiff, widthp, heightp );
+                                x - x_diff, y-y_diff, widthp, heightp );
             
             return true;
         }
@@ -235,11 +227,6 @@ namespace Appmenu
             
             this.button_pressed = false;
             this.dragging_outside = false;
-
-            if( is_mouse_on_menu(event.x) ){
-                // propagate event handling to menuitems
-                return false;
-            }
 
             return false;
         }
@@ -276,7 +263,6 @@ namespace Appmenu
 
             if( event.type == BUTTON_PRESS ){
                 this.button_pressed = true;
-                return true;
             }
 
             return false;
