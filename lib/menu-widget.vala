@@ -241,7 +241,7 @@ namespace Appmenu
                 return false;
             }
 
-            return true;
+            return false;
         }
 
         protected bool on_button_press( Gtk.Widget w, Gdk.EventButton event )
@@ -253,7 +253,7 @@ namespace Appmenu
 
             // filter only left clicks in desired area
             if( event.button != 1 ){
-                return true;
+                return false;
             }
 
             Wnck.Window win = this.get_active_window();
@@ -262,7 +262,7 @@ namespace Appmenu
                         
                 if (win == null){
                     stderr.printf("no active window found" );
-                    return true;
+                    return false;
                 }
 
                 if( win.is_maximized() ){
@@ -271,7 +271,7 @@ namespace Appmenu
                     win.maximize();
                 }
 
-                return true;
+                return false;
             }
 
             if( event.type == BUTTON_PRESS ){
