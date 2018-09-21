@@ -182,7 +182,7 @@ namespace Appmenu
                 if( xp < event.x_root && event.x_root < xp+widthp  ){
                     this.x_diff = ((int) event.x - xp);
                 }else{
-                    this.x_diff = widthp / 2 ;
+                    this.x_diff = (int) (event.x - event.x_root ) + widthp / 2 ;
                 }
 
                 this.y_diff = (int) event.y_root + 5;
