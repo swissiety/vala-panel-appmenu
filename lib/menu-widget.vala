@@ -170,6 +170,9 @@ namespace Appmenu
             
                 Wnck.Window win = this.get_active_window();
                 if( win.is_maximized() ){
+                    // TODO: if unmaximized window is not below pointer -> move it to pointer..
+                    // i think win.unmaximize is an async function and following call to get_geometry 
+                    // will have maximized size values
                     win.unmaximize();
                 }
 
@@ -180,12 +183,12 @@ namespace Appmenu
 
                 win.get_geometry ( out xp, out yp, out widthp, out heightp);
                 if( xp < event.x_root && event.x_root < xp+widthp  ){
-                    this.x_diff = ((int) event.x - xp);
+                    this.x_diff = (int) event.x - xp;
                 }else{
                     this.x_diff = (int) (event.x - event.x_root ) + widthp / 2 ;
                 }
 
-                this.y_diff = (int) event.y_root + 5;
+                this.y_diff = (int) event.y_root + 8;
                 
             }
             
@@ -238,6 +241,11 @@ namespace Appmenu
             }
 
             Wnck.Window win = this.get_active_window();
+
+            // disable on desktop etc.
+            if( win.get_window_type() != Wnck.WindowType.NORMAL ){
+                return false;
+            }
             
             if( event.type == DOUBLE_BUTTON_PRESS ){
                         
